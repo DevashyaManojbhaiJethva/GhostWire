@@ -1,0 +1,37 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    environment:
+      MQTT_USERNAME: ghostwire
+      MQTT_PASSWORD: ghostwire123
+    volumes:
+      - ../mqtt/broker/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    command: >
+      sh -c "mosquitto_passwd -b -c /mosquitto/config/passwd $$MQTT_USERNAME $$MQTT_PASSWORD &&
+      mosquitto -c /mosquitto/config/mosquitto.conf"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  osrm:
+    image: osrm/osrm-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - osrm_data:/data
+    command: osrm-routed --algorithm mld /data/map.osrm
+
+volumes:
+  mosquitto_data:
+  mosquitto_log:
+  osrm_data:
