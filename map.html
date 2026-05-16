@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Accident Threat Zones</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+
+      #map {
+        height: 100%;
+        width: 100%;
+      }
+
+      .panel {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        z-index: 2;
+        width: min(360px, calc(100vw - 32px));
+        max-height: calc(100vh - 32px);
+        overflow: auto;
+        background: #ffffff;
+        border: 1px solid #d8dee4;
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
+        padding: 14px;
+      }
+
+      .panel h1 {
+        margin: 0 0 10px;
+        font-size: 18px;
+      }
+
+      .legend,
+      .alert {
+        display: grid;
+        gap: 8px;
+      }
+
+      .legend-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+      }
+
+      .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+      }
+
+      .alert {
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid #d8dee4;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="panel">
+      <h1>Accident Threat Zones</h1>
+      <div class="legend">
+        <div class="legend-row"><span class="dot" style="background: #e53935"></span> Red: high accident threat</div>
+        <div class="legend-row"><span class="dot" style="background: #1e88e5"></span> Blue: medium accident threat</div>
+        <div class="legend-row"><span class="dot" style="background: #43a047"></span> Green: low accident threat</div>
+      </div>
+      <div id="alerts" class="alert"></div>
+    </section>
+    <main id="map"></main>
+
+    <script>
+      async function initMap() {
+        const response = await fetch("map_data.json");
+        const data = await response.json();
+        const firstPoint = data.points[0] || { lat: 12.9716, lng: 77.5946 };
+
+        const map = new google.maps.Map(document.getElementById("map"), {
+          center: { lat: firstPoint.lat, lng: firstPoint.lng },
+          zoom: 13,
+          mapTypeControl: false,
+          streetViewControl: false,
+        });
+
+        data.points.forEach((point) => {
+          const marker = new google.maps.Marker({
+            position: { lat: point.lat, lng: point.lng },
+            map,
+            title: `${point.roadName} - ${point.zone.toUpperCase()} zone`,
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 9,
+              fillColor: point.color,
+              fillOpacity: 1,
+              strokeColor: "#ffffff",
+              strokeWeight: 2,
+            },
+          });
+
+          new google.maps.Circle({
+            strokeColor: point.color,
+            strokeOpacity: 0.65,
+            strokeWeight: 2,
+            fillColor: point.color,
+            fillOpacity: 0.18,
+            map,
+            center: { lat: point.lat, lng: point.lng },
+            radius: point.zone === "red" ? 700 : point.zone === "blue" ? 450 : 250,
+          });
+
+          const infoWindow = new google.maps.InfoWindow({
+            content: `
+              <strong>${point.roadName}</strong><br>
+              Zone: ${point.zone.toUpperCase()}<br>
+              Accident count: ${point.accidentCount}<br>
+              Impact force: ${point.impactForce}
+            `,
+          });
+
+          marker.addListener("click", () => infoWindow.open({ anchor: marker, map }));
+        });
+
+        const alerts = document.getElementById("alerts");
+        alerts.innerHTML = data.alerts
+          .map(
+            (alert) => `
+              <div>
+                <strong>${alert.zone.toUpperCase()} alert:</strong>
+                ${alert.message}<br>
+                Supplies: ${alert.required_supplies.join(", ")}
+              </div>
+            `
+          )
+          .join("");
+      }
+    </script>
+    <script
+      async
+      defer
+      src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap"
+    ></script>
+  </body>
+</html>
+
