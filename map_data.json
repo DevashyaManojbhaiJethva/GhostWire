@@ -1,0 +1,56 @@
+{
+  "points": [
+    {
+      "roadName": "Popular Road Junction",
+      "lat": 12.9722,
+      "lng": 77.5951,
+      "zone": "red",
+      "color": "#e53935",
+      "accidentCount": 11,
+      "impactForce": 8.1
+    },
+    {
+      "roadName": "Market Main Road",
+      "lat": 12.9761,
+      "lng": 77.6062,
+      "zone": "green",
+      "color": "#43a047",
+      "accidentCount": 2,
+      "impactForce": 1.6
+    }
+  ],
+  "alerts": [
+    {
+      "message": "RED zone accident on Popular Road Junction. Send ambulance, blood_bags, oxygen, trauma_kit from City Med Supply.",
+      "road_name": "Popular Road Junction",
+      "zone": "red",
+      "required_supplies": [
+        "ambulance",
+        "blood_bags",
+        "oxygen",
+        "trauma_kit"
+      ],
+      "supply_house": {
+        "name": "City Med Supply",
+        "distance_km": 0.54,
+        "latitude": 12.9721,
+        "longitude": 77.6001
+      }
+    },
+    {
+      "message": "GREEN zone accident on Market Main Road. Send ambulance, trauma_kit from City Med Supply.",
+      "road_name": "Market Main Road",
+      "zone": "green",
+      "required_supplies": [
+        "ambulance",
+        "trauma_kit"
+      ],
+      "supply_house": {
+        "name": "City Med Supply",
+        "distance_km": 0.8,
+        "latitude": 12.9721,
+        "longitude": 77.6001
+      }
+    }
+  ]
+}
