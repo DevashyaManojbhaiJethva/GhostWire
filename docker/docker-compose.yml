@@ -28,10 +28,9 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - osrm_data:/data
-    command: osrm-routed --algorithm mld /data/map.osrm
+      - ./osrm-data:/data
+    command: osrm-routed --algorithm mld /data/western-zone-260516.osrm
 
 volumes:
   mosquitto_data:
   mosquitto_log:
-  osrm_data:

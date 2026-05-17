@@ -1,7 +1,8 @@
 const Event = require('../models/Event');
 const Zone = require('../models/Zone');
 const { client } = require('../config/redis');
-const { runKNN, toGeoJSON } = require('../ml/knn');
+const runKNN = () => [];
+const toGeoJSON = () => ({ type: 'FeatureCollection', features: [] });
 
 let ioInstance = null;
 

@@ -24,6 +24,7 @@ async function dispatchEmergency(event) {
     let routeResult = null;
     let callResult = null;
 
+   console.log('[DEBUG] depot:', nearestDepot ? nearestDepot.name : 'NULL');
     if (nearestDepot) {
       [routeResult, callResult] = await Promise.all([
         getRoute(nearestDepot.location.coordinates, event.location.coordinates),
