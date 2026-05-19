@@ -1,0 +1,183 @@
+#!/bin/bash
+# GhostWire Driver Consciousness Monitor — Raspberry Pi Installation Script
+# Optimized for Pi Zero 2W and Pi 4
+# Uses OpenCV 4 + MediaPipe + Flask
+
+set -e
+
+# Color codes
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+echo -e "${BLUE}"
+echo "╔════════════════════════════════════════════════════════════╗"
+echo "║   GhostWire Driver Consciousness Monitor                   ║"
+echo "║   Raspberry Pi Installation Script                         ║"
+echo "║   OpenCV 4 + MediaPipe + Flask Backend                     ║"
+echo "╚════════════════════════════════════════════════════════════╝"
+echo -e "${NC}"
+
+# Detect Pi model
+echo -e "${YELLOW}[1/8]${NC} Detecting Raspberry Pi model..."
+if [ -f /proc/device-tree/model ]; then
+    PI_MODEL=$(tr -d '\0' < /proc/device-tree/model)
+else
+    PI_MODEL="Unknown"
+fi
+echo -e "${GREEN}✓ Detected: $PI_MODEL${NC}"
+
+# Check available memory
+MEMORY=$(free -m | awk '/^Mem:/{print $2}')
+echo -e "${YELLOW}[2/8]${NC} Available memory: ${MEMORY}MB"
+
+if [ "$MEMORY" -lt 512 ]; then
+    echo -e "${RED}✗ Error: Minimum 512MB RAM required${NC}"
+    exit 1
+fi
+
+# Update system
+echo -e "${YELLOW}[3/8]${NC} Updating system packages..."
+sudo apt update -qq
+sudo apt upgrade -y -qq
+
+# Install dependencies
+echo -e "${YELLOW}[4/8]${NC} Installing system dependencies..."
+sudo apt install -y -qq \
+    python3-pip \
+    python3-dev \
+    python3-numpy \
+    libopenblas-dev \
+    liblapack-dev \
+    libblas-dev \
+    libatlas-base-dev \
+    libjasper-dev \
+    libtiff-dev \
+    libjasper1 \
+    libharfbuzz0b \
+    libwebp6 \
+    libatlas3-base \
+    libjasper1 \
+    libtiff5 \
+    libwebp6 \
+    libharfbuzz0b \
+    libatlas-base-dev \
+    git
+
+echo -e "${GREEN}✓ System dependencies installed${NC}"
+
+# Upgrade pip
+echo -e "${YELLOW}[5/8]${NC} Upgrading Python pip..."
+pip install --upgrade pip setuptools wheel -q
+
+# Install OpenCV 4 (pre-built wheel - much faster)
+echo -e "${YELLOW}[6/8]${NC} Installing OpenCV 4..."
+pip install opencv-python==4.8.1.78 -q
+echo -e "${GREEN}✓ OpenCV 4.8.1 installed${NC}"
+
+# Install MediaPipe and other dependencies
+echo -e "${YELLOW}[7/8]${NC} Installing MediaPipe and Python packages..."
+pip install -q \
+    mediapipe \
+    Flask \
+    Flask-CORS \
+    scipy \
+    requests \
+    Pillow
+
+echo -e "${GREEN}✓ All packages installed${NC}"
+
+# Verify installations
+echo -e "${YELLOW}[8/8]${NC} Verifying installations..."
+
+echo -n "  Checking OpenCV... "
+OPENCV_VERSION=$(python3 -c "import cv2; print(cv2.__version__)" 2>/dev/null)
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}OK (v$OPENCV_VERSION)${NC}"
+else
+    echo -e "${RED}FAILED${NC}"
+    exit 1
+fi
+
+echo -n "  Checking MediaPipe... "
+if python3 -c "import mediapipe" 2>/dev/null; then
+    echo -e "${GREEN}OK${NC}"
+else
+    echo -e "${RED}FAILED${NC}"
+    exit 1
+fi
+
+echo -n "  Checking Flask... "
+if python3 -c "import flask" 2>/dev/null; then
+    echo -e "${GREEN}OK${NC}"
+else
+    echo -e "${RED}FAILED${NC}"
+    exit 1
+fi
+
+echo -n "  Checking NumPy... "
+NUMPY_VERSION=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null)
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}OK (v$NUMPY_VERSION)${NC}"
+else
+    echo -e "${RED}FAILED${NC}"
+    exit 1
+fi
+
+# Create systemd service (optional)
+echo ""
+echo -e "${YELLOW}Creating systemd service...${NC}"
+sudo tee /etc/systemd/system/ghostwire.service > /dev/null << 'SYSTEMD'
+[Unit]
+Description=GhostWire Driver Consciousness Monitor
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/ghostwire
+ExecStart=/usr/bin/python3 /home/pi/ghostwire/backend.py
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+SYSTEMD
+
+sudo systemctl daemon-reload
+echo -e "${GREEN}✓ Service created at /etc/systemd/system/ghostwire.service${NC}"
+
+# Final summary
+echo ""
+echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗"
+echo "║  Installation Complete! ✓                                  ║"
+echo "╚════════════════════════════════════════════════════════════╝${NC}"
+echo ""
+echo -e "${GREEN}System Information:${NC}"
+echo "  Raspberry Pi: $PI_MODEL"
+echo "  Memory: ${MEMORY}MB"
+echo "  OpenCV: $OPENCV_VERSION"
+echo "  NumPy: $NUMPY_VERSION"
+echo ""
+echo -e "${YELLOW}Next steps:${NC}"
+echo ""
+echo "1. Place backend code at /home/pi/ghostwire/backend.py"
+echo "   mkdir -p ~/ghostwire"
+echo "   cp ghostwire_driver_monitor_backend.py ~/ghostwire/backend.py"
+echo ""
+echo "2. Start the service:"
+echo "   sudo systemctl start ghostwire"
+echo "   sudo systemctl enable ghostwire  # Enable on boot"
+echo ""
+echo "3. Check service status:"
+echo "   sudo systemctl status ghostwire"
+echo "   journalctl -u ghostwire -f"
+echo ""
+echo "4. Test the API:"
+echo "   curl http://localhost:5000/api/health"
+echo ""
+echo -e "${GREEN}GhostWire is ready to deploy!${NC}"
